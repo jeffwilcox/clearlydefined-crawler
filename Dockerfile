@@ -28,15 +28,16 @@ RUN apt-get update && apt-get install -y --no-install-recommends --no-install-su
   libreadline-dev \
   zlib1g-dev \
   cmake \
-  #python3 \
-  #python3-dev \
-  #python3-pip \
+  python3 \
+  python3-dev \
+  python3-pip \
   xz-utils \
   libxml2-dev \
   libxslt1-dev \
-  libpopt0
-
-RUN apt-get install -y python3.10
+  libpopt0 \
+  python3.11 \
+  python3.11-venv \
+  ruby-full
 
 # Scancode
 ARG SCANCODE_VERSION="32.0.6"
@@ -46,22 +47,28 @@ ARG SCANCODE_VERSION="32.0.6"
 #  rm requirements.txt && \
 #  scancode --reindex-licenses && \
 #  scancode --version
-RUN curl -Os https://raw.githubusercontent.com/nexB/scancode-toolkit/v$SCANCODE_VERSION/scancode-toolkit-v32.0.6_py3.10-linux.tar.gz && \
-  tar -xf scancode-toolkit-v32.0.6_py3.10-linux.tar.gz && \
-  scancode --reindex-licenses && \
-  scancode --version
-
 ENV SCANCODE_HOME=/usr/local/bin
+WORKDIR /src/scancode
+WORKDIR /src/scanning
+RUN echo python3 -m venv /src/scanning
+RUN python3 -m venv /src/scanning
+#RUN source /src/scanning/bin/activate
+ENV PATH="/src/scanning/bin:$PATH"
+RUN pip install --upgrade pip setuptools wheel
+RUN pip install scancode-toolkit
+RUN scancode --version
 
 # Licensee
 # The latest version of nokogiri (1.13.1) and faraday (2.3.0) requires RubyGem 2.6.0 while
 # the current RubyGem is 2.5.1. However, after upgrading RubyGem to 3.1.2, licensee:9.12.0 starts
 # to have hard time to find license in LICENSE file, like component npm/npmjs/-/caniuse-lite/1.0.30001344.
 # So we pin to the previous version of nokogiri and faraday.
-RUN gem install nokogiri:1.12.5 --no-document && \
-  gem install faraday:1.10.0 --no-document && \
-  gem install public_suffix:4.0.7 --no-document && \
-  gem install licensee:9.12.0 --no-document
+#RUN gem install nokogiri:1.12.5 --no-document && \
+#  gem install faraday:1.10.0 --no-document && \
+#  gem install public_suffix:4.0.7 --no-document && \
+#  gem install licensee:9.12.0 --no-document
+
+RUN gem install licensee
 
 # REUSE
 RUN pip3 install setuptools

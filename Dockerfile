@@ -5,7 +5,7 @@
 #COPY fossology_init.sh fossology_init.sh
 #RUN ./fossology_init.sh
 
-FROM node:16
+FROM node:18
 ENV APPDIR=/opt/service
 #RUN apk update && apk upgrade && \
 #    apk add --no-cache bash git openssh
@@ -14,33 +14,61 @@ ARG BUILD_NUMBER=0
 ENV CRAWLER_BUILD_NUMBER=$BUILD_NUMBER
 
 # Ruby and Python Dependencies
-RUN apt-get update && apt-get install -y --no-install-recommends --no-install-suggests curl bzip2 build-essential libssl-dev libreadline-dev zlib1g-dev cmake python3 python3-dev python3-pip xz-utils libxml2-dev libxslt1-dev libpopt0 && \
-  rm -rf /var/lib/apt/lists/* && \
-  curl -L https://github.com/rbenv/ruby-build/archive/v20180822.tar.gz | tar -zxvf - -C /tmp/ && \
-  cd /tmp/ruby-build-* && ./install.sh && cd / && \
-  ruby-build -v 2.5.1 /usr/local && rm -rfv /tmp/ruby-build-* && \
-  gem install bundler -v 2.3.26 --no-document
+#RUN apt-get update && apt-get install -y --no-install-recommends --no-install-suggests curl bzip2 build-essential libssl-dev libreadline-dev zlib1g-dev cmake python3 python3-dev python3-pip xz-utils libxml2-dev libxslt1-dev libpopt0 && \
+#  rm -rf /var/lib/apt/lists/* && \
+#  curl -L https://github.com/rbenv/ruby-build/archive/v20180822.tar.gz | tar -zxvf - -C /tmp/ && \
+#  cd /tmp/ruby-build-* && ./install.sh && cd / && \
+#  ruby-build -v 2.5.1 /usr/local && rm -rfv /tmp/ruby-build-* && \
+#  gem install bundler -v 2.3.26 --no-document
+RUN apt-get update && apt-get install -y --no-install-recommends --no-install-suggests \
+  curl \
+  bzip2 \
+  build-essential \
+  libssl-dev \
+  libreadline-dev \
+  zlib1g-dev \
+  cmake \
+  python3 \
+  python3-dev \
+  python3-pip \
+  xz-utils \
+  libxml2-dev \
+  libxslt1-dev \
+  libpopt0 \
+  python3.11 \
+  python3.11-venv \
+  ruby-full
 
 # Scancode
-ARG SCANCODE_VERSION="30.1.0"
-RUN pip3 install --upgrade pip setuptools wheel && \
-  curl -Os https://raw.githubusercontent.com/nexB/scancode-toolkit/v$SCANCODE_VERSION/requirements.txt && \
-  pip3 install --constraint requirements.txt scancode-toolkit==$SCANCODE_VERSION && \
-  rm requirements.txt && \
-  scancode --reindex-licenses && \
-  scancode --version
-
+ARG SCANCODE_VERSION="32.0.6"
+#RUN pip3 install --upgrade pip setuptools wheel && \
+#  curl -Os https://raw.githubusercontent.com/nexB/scancode-toolkit/v$SCANCODE_VERSION/requirements.txt && \
+#  pip3 install --constraint requirements.txt scancode-toolkit==$SCANCODE_VERSION && \
+#  rm requirements.txt && \
+#  scancode --reindex-licenses && \
+#  scancode --version
 ENV SCANCODE_HOME=/usr/local/bin
+WORKDIR /src/scancode
+WORKDIR /src/scanning
+RUN echo python3 -m venv /src/scanning
+RUN python3 -m venv /src/scanning
+#RUN source /src/scanning/bin/activate
+ENV PATH="/src/scanning/bin:$PATH"
+RUN pip install --upgrade pip setuptools wheel
+RUN pip install scancode-toolkit
+RUN scancode --version
 
 # Licensee
 # The latest version of nokogiri (1.13.1) and faraday (2.3.0) requires RubyGem 2.6.0 while
 # the current RubyGem is 2.5.1. However, after upgrading RubyGem to 3.1.2, licensee:9.12.0 starts
 # to have hard time to find license in LICENSE file, like component npm/npmjs/-/caniuse-lite/1.0.30001344.
 # So we pin to the previous version of nokogiri and faraday.
-RUN gem install nokogiri:1.12.5 --no-document && \
-  gem install faraday:1.10.0 --no-document && \
-  gem install public_suffix:4.0.7 --no-document && \
-  gem install licensee:9.12.0 --no-document
+#RUN gem install nokogiri:1.12.5 --no-document && \
+#  gem install faraday:1.10.0 --no-document && \
+#  gem install public_suffix:4.0.7 --no-document && \
+#  gem install licensee:9.12.0 --no-document
+
+RUN gem install licensee
 
 # REUSE
 RUN pip3 install setuptools

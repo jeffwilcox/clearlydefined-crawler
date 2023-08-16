@@ -5,7 +5,7 @@
 #COPY fossology_init.sh fossology_init.sh
 #RUN ./fossology_init.sh
 
-FROM node:16
+FROM node:18
 ENV APPDIR=/opt/service
 #RUN apk update && apk upgrade && \
 #    apk add --no-cache bash git openssh
@@ -14,19 +14,40 @@ ARG BUILD_NUMBER=0
 ENV CRAWLER_BUILD_NUMBER=$BUILD_NUMBER
 
 # Ruby and Python Dependencies
-RUN apt-get update && apt-get install -y --no-install-recommends --no-install-suggests curl bzip2 build-essential libssl-dev libreadline-dev zlib1g-dev cmake python3 python3-dev python3-pip xz-utils libxml2-dev libxslt1-dev libpopt0 && \
-  rm -rf /var/lib/apt/lists/* && \
-  curl -L https://github.com/rbenv/ruby-build/archive/v20180822.tar.gz | tar -zxvf - -C /tmp/ && \
-  cd /tmp/ruby-build-* && ./install.sh && cd / && \
-  ruby-build -v 2.5.1 /usr/local && rm -rfv /tmp/ruby-build-* && \
-  gem install bundler -v 2.3.26 --no-document
+#RUN apt-get update && apt-get install -y --no-install-recommends --no-install-suggests curl bzip2 build-essential libssl-dev libreadline-dev zlib1g-dev cmake python3 python3-dev python3-pip xz-utils libxml2-dev libxslt1-dev libpopt0 && \
+#  rm -rf /var/lib/apt/lists/* && \
+#  curl -L https://github.com/rbenv/ruby-build/archive/v20180822.tar.gz | tar -zxvf - -C /tmp/ && \
+#  cd /tmp/ruby-build-* && ./install.sh && cd / && \
+#  ruby-build -v 2.5.1 /usr/local && rm -rfv /tmp/ruby-build-* && \
+#  gem install bundler -v 2.3.26 --no-document
+RUN apt-get update && apt-get install -y --no-install-recommends --no-install-suggests \
+  curl \
+  bzip2 \
+  build-essential \
+  libssl-dev \
+  libreadline-dev \
+  zlib1g-dev \
+  cmake \
+  #python3 \
+  #python3-dev \
+  #python3-pip \
+  xz-utils \
+  libxml2-dev \
+  libxslt1-dev \
+  libpopt0
+
+RUN apt-get install -y python3.10
 
 # Scancode
-ARG SCANCODE_VERSION="30.1.0"
-RUN pip3 install --upgrade pip setuptools wheel && \
-  curl -Os https://raw.githubusercontent.com/nexB/scancode-toolkit/v$SCANCODE_VERSION/requirements.txt && \
-  pip3 install --constraint requirements.txt scancode-toolkit==$SCANCODE_VERSION && \
-  rm requirements.txt && \
+ARG SCANCODE_VERSION="32.0.6"
+#RUN pip3 install --upgrade pip setuptools wheel && \
+#  curl -Os https://raw.githubusercontent.com/nexB/scancode-toolkit/v$SCANCODE_VERSION/requirements.txt && \
+#  pip3 install --constraint requirements.txt scancode-toolkit==$SCANCODE_VERSION && \
+#  rm requirements.txt && \
+#  scancode --reindex-licenses && \
+#  scancode --version
+RUN curl -Os https://raw.githubusercontent.com/nexB/scancode-toolkit/v$SCANCODE_VERSION/scancode-toolkit-v32.0.6_py3.10-linux.tar.gz && \
+  tar -xf scancode-toolkit-v32.0.6_py3.10-linux.tar.gz && \
   scancode --reindex-licenses && \
   scancode --version
 
